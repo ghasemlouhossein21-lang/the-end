@@ -292,7 +292,7 @@ def _format_volume_gb_label(volume_gb) -> str:
     if v < 1:
         mb = round(v * 1024)
         return f"{mb} مگابایت"
-    return f"{int(v) if v.is_integer() else v:g} گیگابایت"
+    return f"{int(v) if v.is_integer() else v:g} گیگ"
 
 
 
@@ -301,14 +301,16 @@ def _english_digits(value) -> str:
     return text.translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
 
 
-def _delivery_service_label(plan_name, volume_gb, days, plan_key=None) -> str:
-    """نام نمایشی تحویل سرویس طبق فرمت جدید مشتری."""
+def _delivery_service_label(plan_name, volume_gb, days, user_limit, plan_key=None) -> str:
+    """نام نمایشی تحویل سرویس بر اساس اطلاعات واقعی پلن خریداری‌شده."""
     if plan_key == FREE_TEST_PLAN_KEY:
         return "تست رایگان"
-    name = (plan_name or "سرویس").strip()
+
     volume_text = _format_volume_gb_label(volume_gb) if volume_gb is not None else "نامشخص"
-    days_text = f"{days} روز" if days else "نامحدود"
-    return _english_digits(f"{name} | {volume_text} | {days_text}")
+    days_text = f"زمان {days} روزه" if days else "زمان نامحدود"
+    user_limit_text = "نامحدود کاربر" if not user_limit else f"{user_limit} کاربر"
+
+    return _english_digits(f"{volume_text} | {days_text} | {user_limit_text}")
 
 def _gb_from_bytes(num_bytes) -> float | None:
     if not num_bytes:
@@ -1265,8 +1267,6 @@ async def _finalize_send(message: types.Message, state: FSMContext):
 
     volume_text = _format_volume_gb_label(volume_gb)
     days_text = f"{days} روز" if days is not None else "نامحدود"
-    user_limit_text = str(user_limit) if user_limit else "نامحدود"
-
     plan_name_for_delivery = None
     if plan_order_id:
         plan_order = db.get_order(plan_order_id)
@@ -1274,7 +1274,17 @@ async def _finalize_send(message: types.Message, state: FSMContext):
             plan_obj = db.get_effective_plan(plan_order["plan_key"])
             if plan_obj:
                 plan_name_for_delivery = plan_obj.get("name")
-    delivery_label = _delivery_service_label(plan_name_for_delivery, volume_gb, days, plan_order.get("plan_key") if plan_order_id and plan_order else None) if plan_name_for_delivery or plan_order_id else _delivery_service_label(name, volume_gb, days)
+    delivery_label = (
+        _delivery_service_label(
+            plan_name_for_delivery,
+            volume_gb,
+            days,
+            user_limit,
+            plan_order.get("plan_key") if plan_order_id and plan_order else None,
+        )
+        if plan_name_for_delivery or plan_order_id
+        else _delivery_service_label(name, volume_gb, days, None)
+    )
     is_test_delivery = bool(plan_order_id and plan_order and plan_order.get("plan_key") == FREE_TEST_PLAN_KEY)
     delivery_text_key = "service_delivery_test_text" if is_test_delivery else "service_delivery_text"
     caption = t(delivery_text_key, service_label=_english_digits(delivery_label), link=sub_link)
