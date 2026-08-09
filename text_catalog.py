@@ -26,9 +26,9 @@ TEXT_CATEGORIES = OrderedDict({
         ('purchase_history_title', '🛒 تاریخچه خرید شما:\n\n'),
     ],
     '💰 کیف پول': [
-        ('wallet_overview', '💰 کیف پول شما\\n\\n👛 موجودی قابل استفاده: {wallet:,} تومان\\n🔒 موجودی در انتظار: {locked:,} تومان\\n\\nℹ️ موجودی در انتظار، پس از اولین خرید واقعی و پولی فردی که با لینک شما عضو شده، به\u200cصورت خودکار آزاد می\u200cشود.'),
+        ('wallet_overview', '💰 کیف پول شما\n\n👛 موجودی قابل استفاده: {wallet:,} تومان\n🔒 موجودی در انتظار: {locked:,} تومان\n\nℹ️ موجودی در انتظار، پس از اولین خرید واقعی و پولی فردی که با لینک شما عضو شده، به\u200cصورت خودکار آزاد می\u200cشود.'),
         ('wallet_free_overview', '💰 موجودی قابل استفاده شما\n\n{wallet:,} تومان\n\nاین مبلغ را می\u200cتوانید برای خرید سرویس استفاده کنید.'),
-        ('wallet_locked_overview', '🔒 موجودی در انتظار شما\\n\\n{locked:,} تومان\\n\\nاین مبلغ از دعوت دوستان به\u200cدست آمده و پس از اولین خرید واقعی و پولی آن\u200cها، به\u200cصورت خودکار به موجودی قابل\u200cاستفاده شما اضافه می\u200cشود.'),
+        ('wallet_locked_overview', '🔒 موجودی در انتظار شما\n\n{locked:,} تومان\n\nاین مبلغ از دعوت دوستان به\u200cدست آمده و پس از اولین خرید واقعی و پولی آن\u200cها، به\u200cصورت خودکار به موجودی قابل\u200cاستفاده شما اضافه می\u200cشود.'),
         ('wallet_charge', '💳 شارژ کیف پول'),
         ('wallet_discount', '🎟 ثبت کد تخفیف'),
         ('wallet_transactions', '📋 تراکنش\u200cهای من'),
@@ -122,8 +122,8 @@ TEXT_CATEGORIES = OrderedDict({
         ('service_delivery_apps_button', '📱 لینک برنامه‌ها'),
         ('service_delivery_connection_button', '🔧 نحوه اتصال کانفینگ'),
         ('service_delivery_test_text', '🧪 تست رایگان شما با موفقیت تحویل شد\n\n👤 نام کاربری : {service_label}\n\n🔗 لینک کانفینگ شما:\n{link}\n\n📋 لینک را کپی کنید و داخل برنامه‌تان جایگذاری کنید.\n\n💬 پیام ادمین : تست رایگان شما آماده است ❤️\n\nبرای دریافت اپلیکیشن یا آشنایی با نحوه متصل کردن کانفینگ، از دو گزینه زیر استفاده کنید 👇'),
-        ('service_delivery_test_apps_button', '📱 لینک برنامه‌ها (تست)'),
-        ('service_delivery_test_connection_button', '🔧 نحوه اتصال کانفینگ (تست)'),
+        ('service_delivery_test_apps_button', '📱 لینک برنامه‌ها'),
+        ('service_delivery_test_connection_button', '🔧 نحوه اتصال کانفینگ'),
     ],
     '📦 سرویس\u200cهای من': [
         ('configs_empty', '📱 شما هنوز هیچ سرویسی خریداری نکرده\u200cاید.\n\nبرای خرید، از «🛒 خرید اشتراک» اقدام کنید.'),
@@ -191,7 +191,7 @@ TEXT_CATEGORIES = OrderedDict({
         ('config_back_service', '🔙 بازگشت به سرویس'),
     ],
     '👥 دعوت دوستان': [
-        ('referral_overview', '👥 دعوت دوستان و کسب درآمد 💸\\n\\nدوستانتو دعوت کن و به\u200cازای هر دعوت موفق، {reward:,} تومان پاداش نقدی بگیر! 🎁\\nکافیه لینک اختصاصی\u200cت رو برای دوستات، گروه\u200cها یا کانال\u200cهایی که توشون عضوی بفرستی.\\n\\n🔗 لینک اختصاصی شما:\\n{invite_link}\\n\\n🔑 کد اختصاصی: {invite_code}\\n\\n👤 تعداد دعوت: {invited_count}\\n✅ دعوت\u200cهای موفق: {successful_invites}\\n🔓 مبلغ آزاد شده: {released:,} تومان\\n🔒 مبلغ در انتظار: {locked:,} تومان\\n\\nℹ️ به\u200cازای هر دوستی که با لینک شما عضو شود و اولین خرید واقعی و پولی خود را انجام دهد، {reward:,} تومان به\u200cصورت خودکار و بدون نیاز به هیچ اقدام دیگری به کیف پول شما آزاد می\u200cشود. (تست رایگان پاداش را آزاد نمی\u200cکند)\\n\\n⚠️ لطفاً فقط لینک را برای افراد واقعی ارسال کنید؛ استفاده از اکانت\u200cهای فیک تقلب محسوب شده و جایزه شما لغو می\u200cشود.'),
+        ('referral_overview', '👥 دعوت دوستان و کسب درآمد 💸\n\nدوستانتو دعوت کن و به\u200cازای هر دعوت موفق، {reward:,} تومان پاداش نقدی بگیر! 🎁\nکافیه لینک اختصاصی\u200cت رو برای دوستات، گروه\u200cها یا کانال\u200cهایی که توشون عضوی بفرستی.\n\n🔗 لینک اختصاصی شما:\n{invite_link}\n\n🔑 کد اختصاصی: {invite_code}\n\n👤 تعداد دعوت: {invited_count}\n✅ دعوت\u200cهای موفق: {successful_invites}\n🔓 مبلغ آزاد شده: {released:,} تومان\n🔒 مبلغ در انتظار: {locked:,} تومان\n\nℹ️ به\u200cازای هر دوستی که با لینک شما عضو شود و اولین خرید واقعی و پولی خود را انجام دهد، {reward:,} تومان به\u200cصورت خودکار و بدون نیاز به هیچ اقدام دیگری به کیف پول شما آزاد می\u200cشود. (تست رایگان پاداش را آزاد نمی\u200cکند)\n\n⚠️ لطفاً فقط لینک را برای افراد واقعی ارسال کنید؛ استفاده از اکانت\u200cهای فیک تقلب محسوب شده و جایزه شما لغو می\u200cشود.'),
         ('referral_back', '🏠 بازگشت به منوی اصلی'),
     ],
     '👨\u200d💻 پشتیبانی و نمایندگی': [
@@ -250,12 +250,25 @@ CATEGORY_BY_KEY = {key: category for category, items in TEXT_CATEGORIES.items() 
 _CACHE = {}
 
 
+def _normalize_template(template: str) -> str:
+    """Normalize escaped line breaks from older/admin-saved text values.
+
+    Some older text overrides were stored with the two literal characters ``\n``
+    instead of an actual newline. Keep the database value untouched, but render
+    those legacy values correctly everywhere in the bot.
+    """
+    if not isinstance(template, str):
+        return template
+    return template.replace("\n", "\n").replace("\r", "\r").replace("\t", "\t")
+
+
 def text(key: str, default: str | None = None, **values) -> str:
     if key in _CACHE:
         template = _CACHE[key]
     else:
         template = db.get_text_override(key, TEXTS.get(key, default or ""))
         _CACHE[key] = template
+    template = _normalize_template(template)
     if values:
         try:
             return template.format_map(values)
