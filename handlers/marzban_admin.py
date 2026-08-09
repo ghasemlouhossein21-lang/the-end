@@ -94,7 +94,7 @@ def _format_volume_gb_label(volume_gb) -> str:
     if v < 1:
         mb = round(v * 1024)
         return f"{mb} مگابایت"
-    return f"{int(v) if v.is_integer() else v:g} گیگابایت"
+    return f"{int(v) if v.is_integer() else v:g} گیگ"
 
 
 def _actual_volume_gb_from_panel_response(data, fallback=None):
@@ -130,7 +130,7 @@ def _delivery_service_label(plan_name, volume_gb, days, user_limit, plan_key=Non
         return "تست رایگان"
 
     volume_text = _format_volume_gb_label(volume_gb) if volume_gb is not None else "نامشخص"
-    days_text = f"{days} روزه" if days else "نامحدود"
+    days_text = f"زمان {days} روزه" if days else "زمان نامحدود"
     user_limit_text = "نامحدود کاربر" if not user_limit else f"{user_limit} کاربر"
 
     return _english_digits(f"{volume_text} | {days_text} | {user_limit_text}")
