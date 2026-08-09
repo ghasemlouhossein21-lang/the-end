@@ -125,13 +125,15 @@ def _english_digits(value) -> str:
     return text.translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
 
 
-def _delivery_service_label(plan_name, volume_gb, days, plan_key=None) -> str:
+def _delivery_service_label(plan_name, volume_gb, days, user_limit, plan_key=None) -> str:
     if plan_key == FREE_TEST_PLAN_KEY:
         return "تست رایگان"
-    name = (plan_name or "سرویس").strip()
+
     volume_text = _format_volume_gb_label(volume_gb) if volume_gb is not None else "نامشخص"
-    days_text = f"{days} روز" if days else "نامحدود"
-    return _english_digits(f"{name} | {volume_text} | {days_text}")
+    days_text = f"{days} روزه" if days else "نامحدود"
+    user_limit_text = "نامحدود کاربر" if not user_limit else f"{user_limit} کاربر"
+
+    return _english_digits(f"{volume_text} | {days_text} | {user_limit_text}")
 
 
 try:
@@ -800,10 +802,9 @@ async def _deliver_marzban_link(bot, ctx: dict, link: str):
     volume_text = _format_volume_gb_label(volume_gb) if volume_gb is not None else "نامشخص"
     days_text = f"{days} روز" if days else "نامحدود"
     user_limit = snap.get("user_limit")
-    user_limit_text = str(user_limit) if user_limit else "نامحدود"
     expiry_date = (now_tehran_naive() + timedelta(days=days)).strftime("%Y-%m-%d") if days else None
 
-    delivery_label = _delivery_service_label(name, volume_gb, days, plan_key)
+    delivery_label = _delivery_service_label(name, volume_gb, days, user_limit, plan_key)
     is_test_delivery = plan_key == FREE_TEST_PLAN_KEY
     delivery_text_key = "service_delivery_test_text" if is_test_delivery else "service_delivery_text"
     caption = t(delivery_text_key, service_label=delivery_label, link=link)
