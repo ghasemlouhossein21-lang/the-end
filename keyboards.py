@@ -566,23 +566,30 @@ DELIVERY_CONNECTION_GUIDE_ID = 4
 def config_delivery_keyboard(guide_url: str | None = None, is_test: bool = False):
     """دکمه‌های شیشه‌ای تحویل سرویس. برای تست و بسته‌های عادی متن دکمه‌ها مستقل است."""
     if is_test:
-        apps_text = db.get_text_override("service_delivery_test_apps_button", "📱 لینک برنامه‌ها (تست)")
-        connection_text = db.get_text_override("service_delivery_test_connection_button", "🔧 نحوه اتصال کانفینگ (تست)")
+        apps_text = db.get_text_override("service_delivery_test_apps_button", "📱 لینک برنامه‌ها")
+        connection_text = db.get_text_override("service_delivery_test_connection_button", "🔧 نحوه اتصال کانفینگ")
     else:
         apps_text = db.get_text_override("service_delivery_apps_button", "📱 لینک برنامه‌ها")
         connection_text = db.get_text_override("service_delivery_connection_button", "🔧 نحوه اتصال کانفینگ")
 
+    # برای سازگاری با متن‌های قدیمی ذخیره‌شده، برچسب «(تست)» را هم از عنوان دکمه حذف می‌کنیم.
+    apps_text = apps_text.replace(" (تست)", "").replace("(تست)", "").strip()
+    connection_text = connection_text.replace(" (تست)", "").replace("(تست)", "").strip()
+
+    # هر دو دکمه در یک ردیف قرار می‌گیرند؛ مقصد Guideها ثابت می‌ماند.
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text=apps_text,
-            callback_data=f"guideopen_{DELIVERY_APPS_GUIDE_ID}",
-            style="primary",
-        )],
-        [InlineKeyboardButton(
-            text=connection_text,
-            callback_data=f"guideopen_{DELIVERY_CONNECTION_GUIDE_ID}",
-            style="primary",
-        )],
+        [
+            InlineKeyboardButton(
+                text=apps_text,
+                callback_data=f"guideopen_{DELIVERY_APPS_GUIDE_ID}",
+                style="primary",
+            ),
+            InlineKeyboardButton(
+                text=connection_text,
+                callback_data=f"guideopen_{DELIVERY_CONNECTION_GUIDE_ID}",
+                style="primary",
+            ),
+        ],
     ])
 
 
