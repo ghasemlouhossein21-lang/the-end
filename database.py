@@ -2466,6 +2466,150 @@ def export_backup_json(path: str):
 
 
 # ---------------------------------------------------------------------------
+# 🗑 حذف کامل کاربر فقط از دیتابیس ربات
+# ---------------------------------------------------------------------------
+def delete_user_from_bot(telegram_id) -> bool:
+    """
+    کاربر را فقط از دیتابیس خود ربات حذف می‌کند.
+
+    نکته مهم:
+    - هیچ درخواست/فراخوانی به Marzban، PasarGuard یا هر پنل VPN دیگری انجام نمی‌شود.
+    - داده‌های وابسته‌ی کاربر در جداول ربات حذف می‌شوند.
+    - مصرف کدهای تخفیفِ کاربر قبل از حذف usageها به موجودی uses برگردانده می‌شود.
+    - رابطه‌های referral طوری پاک می‌شوند که شمارنده‌های referral کاربران دیگر
+      تا حد ممکن صحیح باقی بمانند.
+    - همه تغییرات داخل یک transaction انجام می‌شوند؛ در صورت خطا rollback می‌شود.
+    """
+    telegram_id = str(telegram_id)
+
+    with transaction() as cur:
+        cur.execute("SELECT id FROM users WHERE telegram_id = ?", (telegram_id,))
+        row = cur.fetchone()
+        if not row:
+            return False
+
+        user_id = int(row[0])
+
+        # ادمین فرعی نباید با حذف کاربر از جدول users پاک شود.
+        # بعضی نسخه‌های قدیمی جدول bot_admins را lazy می‌ساختند؛ بنابراین
+        # قبل از بررسی، ساختار حداقلی سازگار را در همین transaction تضمین می‌کنیم.
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS bot_admins (
+                telegram_id TEXT PRIMARY KEY,
+                name TEXT,
+                permissions TEXT NOT NULL DEFAULT '[]',
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL
+            )
+        """)
+        cur.execute("SELECT 1 FROM bot_admins WHERE telegram_id = ? LIMIT 1", (telegram_id,))
+        if cur.fetchone():
+            raise ValueError("cannot delete bot admin")
+
+        # قبل از حذف referralها، اثرشان را روی شمارنده‌ی معرف‌های باقی‌مانده اصلاح می‌کنیم.
+        cur.execute(
+            "SELECT referrer_id, invited_id, status FROM referrals "
+            "WHERE referrer_id = ? OR invited_id = ?",
+            (user_id, user_id),
+        )
+        referral_rows = cur.fetchall()
+
+        for referrer_id, invited_id, status in referral_rows:
+            if referrer_id != user_id:
+                # کاربر حذف‌شده، دعوت‌شده‌ی این معرف بوده است.
+                cur.execute(
+                    """UPDATE users
+                       SET invited_count = CASE WHEN invited_count > 0 THEN invited_count - 1 ELSE 0 END,
+                           successful_invites = CASE
+                               WHEN ? = 'completed' AND successful_invites > 0
+                               THEN successful_invites - 1
+                               ELSE successful_invites
+                           END
+                       WHERE id = ?""",
+                    (status, referrer_id),
+                )
+
+        # مصرف کدهای تخفیف کاربر را به uses برمی‌گردانیم تا حذف کاربر باعث
+        # کم‌شدن دائمی ظرفیت کد تخفیف نشود.
+        cur.execute(
+            "SELECT discount_id, COUNT(*) FROM discount_usages "
+            "WHERE user_id = ? GROUP BY discount_id",
+            (user_id,),
+        )
+        for discount_id, usage_count in cur.fetchall():
+            cur.execute(
+                "UPDATE discounts SET uses = uses + ? WHERE id = ?",
+                (int(usage_count), discount_id),
+            )
+
+        # داده‌های مستقیم کاربر.
+        cur.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
+        cur.execute("DELETE FROM configs WHERE user_id = ?", (user_id,))
+        cur.execute("DELETE FROM orders WHERE user_id = ?", (user_id,))
+        cur.execute("DELETE FROM online_payments WHERE user_id = ? OR telegram_id = ?", (user_id, telegram_id))
+        cur.execute("DELETE FROM discount_usages WHERE user_id = ?", (user_id,))
+
+        # رسیدها و فاکتورهایی که ممکن است هنوز user_id نداشته باشند، با telegram_id هم پاک می‌شوند.
+        cur.execute(
+            "DELETE FROM pending_receipts WHERE user_id = ? OR telegram_id = ?",
+            (user_id, telegram_id),
+        )
+        cur.execute(
+            "DELETE FROM invoices WHERE user_id = ? OR telegram_id = ?",
+            (user_id, telegram_id),
+        )
+
+        # وضعیت‌های پایدار FSM کاربر در private chat معمولاً به‌شکل
+        # bot_id:user_id:user_id:... ذخیره می‌شوند.
+        cur.execute(
+            "DELETE FROM fsm_storage WHERE storage_key LIKE ?",
+            (f"%:{telegram_id}:{telegram_id}:%",),
+        )
+
+        # محدودیت‌های موقت و لاگ‌های مدیریتی که target صریحاً همین کاربر است.
+        cur.execute(
+            "DELETE FROM api_rate_limits WHERE bucket_key = ? OR bucket_key LIKE ?",
+            (telegram_id, f"%:{telegram_id}:%"),
+        )
+        # جدول لاگ در بعضی نسخه‌های قدیمی به‌صورت lazy ساخته می‌شد؛
+        # این CREATE بی‌خطر است و جلوی شکست حذف روی دیتابیس قدیمی را می‌گیرد.
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS admin_activity_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_id TEXT NOT NULL,
+                admin_name TEXT,
+                action TEXT NOT NULL,
+                target TEXT,
+                details TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
+        cur.execute(
+            "DELETE FROM admin_activity_logs WHERE target = ?",
+            (telegram_id,),
+        )
+
+        # رابطه‌های دعوت را حذف می‌کنیم؛ اگر کاربر معرف بوده، invited userها
+        # دیگر به یک user_id حذف‌شده اشاره نمی‌کنند.
+        cur.execute(
+            "UPDATE users SET referrer_id = NULL WHERE referrer_id = ?",
+            (user_id,),
+        )
+        cur.execute(
+            "DELETE FROM referrals WHERE referrer_id = ? OR invited_id = ?",
+            (user_id, user_id),
+        )
+
+        # اگر کاربر نماینده بوده، رکورد نمایندگی او هم متعلق به همین ربات است.
+        cur.execute("DELETE FROM agents WHERE telegram_id = ?", (telegram_id,))
+
+        # در پایان خود کاربر حذف می‌شود.
+        cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+        return (cur.rowcount or 0) > 0
+
+
+# ---------------------------------------------------------------------------
 # 🚫 مسدودسازی کاربر (پیشنهاد خود AI — تا ادمین بتواند ترول‌زن/مزاحمه‌گر بی‌ادب
 # را بدون خروج از دیتابیس بلاکه کند: کاربر مسدودشده دیگر نمی‌تواند با ربات کار کند
 # و قبل از هر هندلر اصلی بلاک می‌شود (در handlers بررسی می‌شود).
