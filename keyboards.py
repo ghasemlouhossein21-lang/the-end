@@ -499,8 +499,24 @@ def admin_user_actions_keyboard(uid: str, is_blocked: bool = False, show_pm_link
         [InlineKeyboardButton(text="📒 حسابداری کاربر (تراکنش‌ها/منشأ پول)", callback_data=f"accounting_{uid}_0", style="primary")],
         [InlineKeyboardButton(text="🚀 ارسال کانفیگ VIP (QR)", callback_data=f"sendvip_{uid}", style="primary")],
         [InlineKeyboardButton(text="📦 مشاهده و مدیریت سرویس‌های کاربر", callback_data=f"svcs_{uid}", style="primary")],
-        [block_btn],
+        [block_btn, InlineKeyboardButton(text="🗑 حذف کامل کاربر", callback_data=f"deleteuser_{uid}", style="danger")],
         [InlineKeyboardButton(text="🔙 بازگشت", callback_data="admin_back", style="primary")],
+    ])
+
+
+def admin_delete_user_confirm_keyboard(uid: str):
+    """تأیید حذف کامل کاربر فقط از دیتابیس ربات؛ هیچ پنل VPNای فراخوانی نمی‌شود."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="⚠️ بله، حذف کامل کاربر",
+            callback_data=f"deleteuserconfirm_{uid}",
+            style="danger",
+        )],
+        [InlineKeyboardButton(
+            text="❌ انصراف",
+            callback_data=f"useropen_{uid}",
+            style="primary",
+        )],
     ])
 
 
