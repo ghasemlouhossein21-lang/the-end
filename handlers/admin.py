@@ -46,6 +46,7 @@ from keyboards import (
     admin_back_button,
     admin_discount_menu,
     admin_user_actions_keyboard,
+    admin_delete_user_confirm_keyboard,
     admin_purchase_notify_keyboard,
     admin_userlist_menu,
     config_delivery_keyboard,
@@ -137,7 +138,7 @@ def _permission_for_callback(data: str | None) -> str | None:
     groups = [
         (("admin_stats",), "stats"),
         (("admin_request_queue", "admin_order_queue", "dismissorder_", "clearorders", "marzbansend|"), "requests"),
-        (("admin_userlist", "userpage_", "useropen_", "accounting_", "admin_search", "useractions_", "pm_", "toggleblock_", "svcs_", "svcdetail_", "svcdelete_", "svcrestore_", "svcpurge", "svcedit_"), "users"),
+        (("admin_userlist", "userpage_", "useropen_", "accounting_", "admin_search", "useractions_", "pm_", "toggleblock_", "deleteuser_", "deleteuserconfirm_", "svcs_", "svcdetail_", "svcdelete_", "svcrestore_", "svcpurge", "svcedit_"), "users"),
         (("admin_broadcast",), "broadcast"),
         (("admin_discount", "discdetail_", "discdelete", "discedit_", "discplan", "new_discount", "disctype_"), "discounts"),
         (("admin_agency", "new_agent", "deleteagent_", "agentopen_", "editagentpercent_"), "agency"),
@@ -1756,6 +1757,74 @@ async def admin_toggle_block(callback: types.CallbackQuery):
     )
     await _reply_with_user_actions(callback.message, text, user["telegram_id"], not currently_blocked, edit=True)
     await callback.answer("🚫 کاربر مسدود شد." if not currently_blocked else "✅ مسدودیت برداشته شد.")
+
+
+@router.callback_query(F.data.startswith("deleteuser_"))
+async def admin_delete_user_ask(callback: types.CallbackQuery):
+    if not _admin_perm(callback.from_user.id, "users"):
+        await callback.answer("⛔ دسترسی ندارید.", show_alert=True)
+        return
+
+    uid = callback.data.replace("deleteuser_", "", 1)
+    if uid == str(ADMIN_ID) or db.is_sub_admin(uid):
+        await callback.answer("⛔ حساب ادمین قابل حذف نیست.", show_alert=True)
+        return
+    user = db.get_user(uid)
+    if user is None:
+        await callback.answer("❌ کاربر یافت نشد.", show_alert=True)
+        return
+
+    await callback.message.edit_text(
+        f"⚠️ حذف کامل کاربر\n\n"
+        f"👤 {user['name']}\n"
+        f"🆔 {user['telegram_id']}\n\n"
+        "این عملیات فقط اطلاعات کاربر را از دیتابیس ربات حذف می‌کند.\n"
+        "هیچ درخواستی به پنل Marzban یا PasarGuard ارسال نمی‌شود.\n\n"
+        "❗️این عملیات قابل بازگشت نیست.",
+        reply_markup=admin_delete_user_confirm_keyboard(uid),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("deleteuserconfirm_"))
+async def admin_delete_user_confirm(callback: types.CallbackQuery):
+    if not _admin_perm(callback.from_user.id, "users"):
+        await callback.answer("⛔ دسترسی ندارید.", show_alert=True)
+        return
+
+    uid = callback.data.replace("deleteuserconfirm_", "", 1)
+    if uid == str(ADMIN_ID) or db.is_sub_admin(uid):
+        await callback.answer("⛔ حساب ادمین قابل حذف نیست.", show_alert=True)
+        return
+    user = db.get_user(uid)
+    if user is None:
+        await callback.answer("❌ کاربر قبلاً حذف شده یا یافت نشد.", show_alert=True)
+        return
+
+    try:
+        deleted = db.delete_user_from_bot(uid)
+    except Exception:
+        logger.exception("خطا در حذف کامل کاربر از دیتابیس ربات: %s", uid)
+        await callback.answer("❌ حذف کاربر انجام نشد؛ اطلاعات ربات تغییر نکرد.", show_alert=True)
+        return
+
+    if not deleted:
+        await callback.answer("❌ کاربر یافت نشد.", show_alert=True)
+        return
+
+    await callback.message.edit_text(
+        f"✅ کاربر «{user['name']}» با شناسه {uid} فقط از دیتابیس ربات حذف شد.\n\n"
+        "🔒 هیچ تغییری در Marzban یا PasarGuard انجام نشد.",
+        reply_markup=admin_back_button(),
+    )
+    await callback.answer("🗑 کاربر از ربات حذف شد.", show_alert=True)
+    await _notify_main_admin_action(
+        callback.bot,
+        callback.from_user,
+        "حذف کامل کاربر از ربات",
+        uid,
+        f"name={user['name']}",
+    )
 
 
 @router.callback_query(F.data.startswith("svcs_"))
