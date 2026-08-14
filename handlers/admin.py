@@ -1288,7 +1288,7 @@ async def _finalize_send(message: types.Message, state: FSMContext):
     )
     is_test_delivery = bool(plan_order_id and plan_order and plan_order.get("plan_key") == FREE_TEST_PLAN_KEY)
     delivery_text_key = "service_delivery_test_text" if is_test_delivery else "service_delivery_text"
-    caption = t(delivery_text_key, service_label=_english_digits(delivery_label), link=sub_link)
+    caption = user_text(delivery_text_key, service_label=_english_digits(delivery_label), link=sub_link)
 
     expiry_date = None
     if days is not None:
